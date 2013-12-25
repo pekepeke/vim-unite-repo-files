@@ -142,24 +142,19 @@ function! s:source.async_gather_candidates(args, context) "{{{2
             \ 'Directory traverse was completed.', self.name)
     else
       call unite#print_source_message(
-            \ 'Scanning direcotory.', self.name)
+            \ 'Scanning directory.', self.name)
     endif
     let a:context.is_async = 0
     let continuation.end = 1
   endif
 
   let candidates = []
-  for filename in map(filter(
+
+  let filenames = map(filter(
         \ stdout.read_lines(-1, 100), 'v:val != ""'),
         \ "fnamemodify(unite#util#iconv(v:val, 'char', &encoding), ':p')")
-    if filename =~? a:context.source.ignore_pattern
-      continue
-    endif
-    call add(candidates, s:create_candidate(
-          \   unite#util#substitute_path_separator(
-          \   fnamemodify(filename, ':p')), continuation.directory
-          \ ))
-  endfor
+  let filenames = filter(filenames, 'v:val !~? a:context.source.ignore_pattern')
+  let candidates = map(filenames, 's:create_candidate(v:val, continuation.directory)')
 
   let continuation.files += candidates
   " if stdout.eof
@@ -176,12 +171,15 @@ function! s:source.hooks.on_close(args, context) " {{{2
 endfunction
 
 " util functions {{{1
-function! s:create_candidate(val, directory) "{{{2
+function! s:create_candidate(filename, directory) "{{{2
+  let fpath = unite#util#substitute_path_separator(
+        \ fnamemodify(a:filename, ':p'))
+  let start = strlen(a:directory) + 1
   return {
-        \   "word": a:val,
+        \   "word": strpart(fpath, start),
         \   "source": "repo_files",
         \   "kind": "file",
-        \   "action__path": a:val,
+        \   "action__path": fpath,
         \   "action__directory": a:directory
         \ }
 endfunction
@@ -196,7 +194,7 @@ function! s:has_located(directory, item) " {{{2
   return isdirectory(t) || filereadable(t)
 endfunction
 
-function! s:get_command(item, direcotory) " {{{2
+function! s:get_command(item, directory) " {{{2
   let commands = type(a:item.command) == type([]) ? a:item.command : [a:item.command]
   for _cmd in commands
     if executable(_cmd)
@@ -205,7 +203,7 @@ function! s:get_command(item, direcotory) " {{{2
     endif
   endfor
   if exists('command')
-    return substitute(substitute(a:item.exec, '%c', command, ''), '%d', a:direcotory, '')
+    return substitute(substitute(a:item.exec, '%c', command, ''), '%d', a:directory, '')
   endif
   return ''
 endfunction
