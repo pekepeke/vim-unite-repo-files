@@ -172,8 +172,9 @@ endfunction
 
 " util functions {{{1
 function! s:create_candidate(filename, directory) "{{{2
+  let filename = a:directory . "/" . a:filename
   let fpath = unite#util#substitute_path_separator(
-        \ fnamemodify(a:filename, ':p'))
+        \ fnamemodify(filename, ':p'))
   let start = strlen(a:directory) + 1
   return {
         \   "word": strpart(fpath, start),
