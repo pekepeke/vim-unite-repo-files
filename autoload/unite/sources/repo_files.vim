@@ -9,6 +9,7 @@ let g:unite_source_repo_files_ignore_pattern = get(g:, 'unite_repo_files_ignore_
 \'\%(^\|/\)\.$\|\~$\|\.\%(o\|exe\|dll\|bak\|DS_Store\|zwc\|pyc\|sw[po]\|class\)$'.
 \'\|\%(^\|/\)\%(\.hg\|\.git\|\.bzr\|\.svn\|tags\%(-.*\)\?\)\%($\|/\)')
 " \'\|\.\%(\|jpg\|png\|gif\|jpeg\|tiff\|eps\|ocx\|prn\|obj\)$'.
+let g:unite_repo_files_debug = 0
 
 " static values {{{1
 let s:has_vimproc = unite#util#has_vimproc()
@@ -172,7 +173,11 @@ endfunction
 
 " util functions {{{1
 function! s:create_candidate(filename, directory) "{{{2
-  let filename = a:directory . "/" . a:filename
+  if stridx(a:filename, a:directory) == -1
+    let filename = a:directory . "/" . a:filename
+  else
+    let filename = a:filename
+  endif
   let fpath = unite#util#substitute_path_separator(
         \ fnamemodify(filename, ':p'))
   let start = strlen(a:directory) + 1
@@ -213,6 +218,25 @@ function! s:is_use_system(item) " {{{2
   return exists('a:item.use_system') && a:item.use_system
 endfunction
 
+function! s:log(...) "{{{2
+  if !g:unite_repo_files_debug
+    return
+  endif
+  if exists(':NeoBundle') && !neobundle#is_sourced('vimconsole.vim')
+    NeoBundleSource vimconsole.vim
+  endif
+  if !exists(':VimConsoleOpen')
+    return
+  endif
+  let args = copy(a:000)
+  if empty(args)
+    call vimconsole#log('repo_files')
+    return
+  endif
+  let args[0] = strftime("%Y/%m/%d %T") . "> repo_files " . args[0]
+  call call('vimconsole#log', args)
+endfunction
+
 function! s:variables_init() "{{{2
   for item in [
         \ {
@@ -251,18 +275,11 @@ function! s:variables_init() "{{{2
     endif
   endfor
 
-  " too slow...
-  " if !exists('g:unite_source_repo_files_rule["svn"]')
-  "   let g:unite_source_repo_files_rule['svn'] = {
-  "         \   'located' : '.svn',
-  "         \   'command' : 'svn',
-  "         \   'exec' : '%c ls -R',
-  "         \ }
-  " endif
 endfunction
 
 " define {{{1
 call s:variables_init()
+
 function! unite#sources#repo_files#define() " {{{2
   return [s:source]
 endfunction
