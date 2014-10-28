@@ -240,6 +240,11 @@ endfunction
 function! s:variables_init() "{{{2
   for item in [
         \ {
+        \   'name': 'files',
+        \   'located' : '.',
+        \   'command' : 'files',
+        \   'exec' : '%c',
+        \ }, {
         \   'name': 'git',
         \   'located' : '.git',
         \   'command' : 'git',
