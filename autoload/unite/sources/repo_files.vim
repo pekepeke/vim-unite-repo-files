@@ -27,7 +27,11 @@ function! s:source.on_init(args, context) "{{{2
 endfunction
 
 function! s:source.gather_candidates(args, context) " {{{2
-  let directory = unite#util#path2project_directory(expand('%'))
+  let directory = unite#util#substitute_path_separator(
+        \ unite#util#expand(join(a:args, ':')))
+  if directory == ''
+    let directory = unite#util#path2project_directory(expand('%'))
+  endif
 
   let command = ""
   let is_use_system = 0
